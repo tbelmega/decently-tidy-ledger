@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="ledger-write-token" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Decently Tidy Ledger</title>
+<style>
+  /* ---- Vendored webfonts (see fonts/, served from /fonts/) ---- */
+  @font-face {
+    font-family: "Space Grotesk"; font-style: normal; font-weight: 700;
+    font-display: swap; src: url("/fonts/space-grotesk.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Sans"; font-style: normal; font-weight: 400 600;
+    font-display: swap; src: url("/fonts/ibm-plex-sans.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "IBM Plex Sans"; font-style: italic; font-weight: 400;
+    font-display: swap; src: url("/fonts/ibm-plex-sans-italic.woff2") format("woff2");
+  }
+  @font-face {
+    font-family: "JetBrains Mono"; font-style: normal; font-weight: 400 600;
+    font-display: swap; src: url("/fonts/jetbrains-mono.woff2") format("woff2");
+  }
+
+  /* ============ On Coding Design System tokens ============ */
+  :root {
+    /* brand blue scale */
+    --blue-50:#eaf6fd; --blue-100:#cfeafa; --blue-200:#a3d8f4; --blue-300:#6cc1ec;
+    --blue-400:#2bb8ea; --blue-500:#0a86d8; --blue-600:#0a6cc0; --blue-700:#0c5398;
+    --blue-800:#0d4378; --blue-900:#0e3258;
+    /* neutral / ink ramp */
+    --gray-0:#ffffff; --gray-25:#fbfcfd; --gray-50:#f6f8fa; --gray-100:#eef1f5;
+    --gray-200:#e3e8ee; --gray-300:#d3dae3; --gray-400:#aab4c0; --gray-500:#7b8794;
+    --gray-600:#586271; --gray-700:#3d4654; --gray-800:#232c39; --gray-900:#141a23;
+    --gray-950:#0b0e14;
+    /* semantic accents */
+    --green-500:#1ba673; --green-50:#e7f6ef; --amber-500:#d98a0b; --amber-50:#fbf2e0;
+    --red-500:#d83a45; --red-50:#fbe9ea;
+
+    /* semantic aliases (light) */
+    --paper:var(--gray-0); --surface:var(--gray-0); --surface-subtle:var(--gray-50);
+    --text-strong:var(--gray-950); --text-body:var(--gray-800); --text-muted:var(--gray-600);
+    --text-faint:var(--gray-500);
+    --accent:var(--blue-500); --accent-hover:var(--blue-600); --accent-soft:var(--blue-50);
+    --accent-text:var(--blue-700);
+    --border:var(--gray-200); --border-strong:var(--gray-300); --border-faint:var(--gray-100);
+    --ring:color-mix(in srgb, var(--blue-500) 45%, transparent);
+    --success:var(--green-500); --warning:var(--amber-500); --danger:var(--red-500);
+    --success-soft:var(--green-50); --warning-soft:var(--amber-50); --danger-soft:var(--red-50);
+    --brand-gradient:linear-gradient(135deg,#2bb8ea,#0c5398);
+
+    /* type families + scale (1.250 major third) */
+    --font-display:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-sans:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --text-2xs:0.6875rem; --text-xs:0.75rem; --text-sm:0.875rem; --text-base:1rem;
+    --text-md:1.125rem; --text-lg:1.375rem; --text-xl:1.75rem; --text-2xl:2.25rem;
+    --text-3xl:2.875rem;
+
+    /* radii + elevation + motion */
+    --radius-sm:5px; --radius-md:8px; --radius-lg:12px; --radius-pill:999px;
+    --shadow-xs:0 1px 2px rgba(13,17,23,0.05);
+    --shadow-md:0 4px 12px rgba(13,17,23,0.10);
+    --shadow-lg:0 12px 32px rgba(13,17,23,0.16);
+    --ease-out:cubic-bezier(0.22,1,0.36,1);
+
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --paper:var(--gray-950); --surface:#11161f; --surface-subtle:#161c27;
+    --text-strong:#e9eef5; --text-body:#c4cdd9; --text-muted:#8a96a6; --text-faint:#626d7d;
+    --accent:var(--blue-400); --accent-hover:var(--blue-300); --accent-soft:rgba(43,184,234,0.12);
+    --accent-text:var(--blue-300);
+    --border:#232c39; --border-strong:#313c4c; --border-faint:#1a212c;
+    --ring:color-mix(in srgb, var(--blue-400) 55%, transparent);
+    --success-soft:rgba(27,166,115,0.14); --warning-soft:rgba(217,138,11,0.14);
+    --danger-soft:rgba(216,58,69,0.14);
+    --shadow-xs:0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md:0 4px 12px rgba(0,0,0,0.5);
+    --shadow-lg:0 12px 32px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--text-body);
+    font-family: var(--font-sans); font-size: var(--text-base);
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    overflow: hidden; /* the page itself never scrolls */
+  }
+  a { color: var(--accent-text); text-decoration: none; }
+  a:hover { color: var(--accent-hover); }
+
+  /* thin custom scrollbars: rail, column strip (x) and each column (y) */
+  .kb-scroll::-webkit-scrollbar, .kb-col::-webkit-scrollbar { height: 10px; width: 10px; }
+  .kb-scroll::-webkit-scrollbar-thumb, .kb-col::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+  .kb-scroll::-webkit-scrollbar-track, .kb-col::-webkit-scrollbar-track { background: transparent; }
+
+  .app { height: 100vh; display: flex; background: var(--paper); overflow: hidden; }
+
+  /* ---- sidebar: brand, two peer collapsible sections, pinned footer ---- */
+  .rail {
+    width: 264px; flex: 0 0 264px; height: 100vh; display: flex; flex-direction: column;
+    border-right: 1px solid var(--border); background: var(--surface-subtle); overflow: hidden;
+  }
+  .brand { flex: 0 0 auto; padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+  .kicker {
+    font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .brand h1 {
+    margin: 4px 0 0; font-family: var(--font-display); font-weight: 700;
+    font-size: var(--text-lg); letter-spacing: -0.02em; color: var(--text-strong); line-height: 1.15;
+  }
+
+  /* Shrink order: Projects keeps a floor of ~2 rows + the legend and only its <nav>
+     scrolls; Workers is `flex: 0 1 auto` with no max-height, so it takes its natural
+     height and gives space up first. Neither can overlap the pinned footer. */
+  .rail-sec { display: flex; flex-direction: column; min-height: 0; }
+  .rail-sec--projects { flex: 1 1 auto; min-height: 222px; overflow: hidden; border-bottom: 1px solid var(--border); }
+  .rail-sec--workers { flex: 0 1 auto; }
+  /* a collapsed section is its header and nothing else  -  it must not hold the floor open */
+  .rail-sec[data-open="false"] { flex: 0 0 auto; min-height: 0; }
+  .rail-sec[data-open="false"] .sec-body { display: none; }
+  .sec-head {
+    display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;
+    background: transparent; border: none; text-align: left;
+    transition: background .12s var(--ease-out);
+  }
+  .rail-sec--projects .sec-head { padding: 13px 14px 9px; }
+  .rail-sec--workers .sec-head { padding: 11px 14px 10px; }
+  .sec-head:hover { background: var(--surface); }
+  .sec-head .caret {
+    flex: 0 0 auto; font-size: 9px; line-height: 1; color: var(--text-faint);
+    transition: transform .18s var(--ease-out);
+  }
+  .rail-sec[data-open="true"] .sec-head .caret { transform: rotate(90deg); }
+  .sec-head .label {
+    font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .sec-head .summary {
+    margin-left: auto; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint);
+  }
+  .sec-head .summary.live { font-weight: 600; color: var(--text-muted); }
+  .sec-body { display: flex; flex-direction: column; min-height: 0; }
+  .rail-sec--projects .sec-body { flex: 1 1 auto; overflow: hidden; }
+  .rail-sec--workers .sec-body { flex: 0 1 auto; overflow: hidden; }
+  .rail-list {
+    flex: 1 1 auto; min-height: 74px; overflow-y: auto; overflow-x: hidden; padding: 0 10px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .rail-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; padding: 8px 10px; border-radius: var(--radius-md);
+    font-family: var(--font-sans); font-size: var(--text-sm); text-align: left; cursor: pointer;
+    background: transparent; border: 1px solid transparent; color: var(--text-muted); font-weight: 500;
+    transition: background .12s var(--ease-out), border-color .12s var(--ease-out);
+  }
+  .rail-row:hover { background: var(--surface); border-color: var(--border-strong); }
+  .rail-row.selected {
+    background: var(--surface); border-color: var(--border-strong); color: var(--text-strong);
+    font-weight: 600; box-shadow: var(--shadow-xs);
+  }
+  .rail-row .name { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .rail-row .name .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rail-row .dot { width: 7px; height: 7px; border-radius: 2px; flex: 0 0 auto; background: var(--brand-gradient); }
+  .rail-row.all .dot { background: var(--text-faint); }
+  .rail-row .count { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; color: var(--text-faint); }
+  .rail-row.selected .count { color: var(--accent-text); }
+  /* the legend lives INSIDE Projects, not as a peer of Workers  -  its counts
+     describe the current project scope */
+  .legend {
+    flex: 0 0 auto; margin: 0 10px; padding: 10px 4px 12px;
+    border-top: 1px solid var(--border-faint); display: flex; flex-direction: column; gap: 9px;
+  }
+  .legend-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .legend-row .what { display: flex; align-items: center; gap: 7px; font-size: var(--text-xs); color: var(--text-muted); }
+  .legend-row .swatch { width: 7px; height: 7px; border-radius: 50%; }
+  .legend-row .n { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; color: var(--text-strong); }
+
+  /* ---- workers (fleet presence; unrelated to items, shares only project names) ---- */
+  .worker-list {
+    flex: 0 1 auto; overflow-y: auto; overflow-x: hidden; padding: 0 10px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .worker-row {
+    display: flex; flex-direction: column; gap: 4px; padding: 7px 10px;
+    border-radius: var(--radius-md); transition: background .12s var(--ease-out);
+  }
+  .worker-row:hover { background: var(--surface); }
+  .worker-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .worker-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; }
+  .worker-dot.ready { background: var(--success); }
+  .worker-dot.held { background: var(--warning); }
+  /* hollow rather than merely grey  -  filled-vs-hollow is the primary reachability
+     signal, so it survives colour-blindness and greyscale */
+  .worker-dot.unreachable { background: transparent; border: 1px solid var(--text-faint); }
+  /* the whole rail dims past the staleness window: the picture is old as a WHOLE, and
+     dimming one row at a time would imply per-host freshness this data never has */
+  .worker-list.stale { opacity: .55; }
+  .worker-name {
+    font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600;
+    color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .worker-row.unreachable .worker-name { color: var(--text-faint); }
+  .worker-when {
+    margin-left: auto; font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-faint); white-space: nowrap;
+  }
+  /* aligned under the hostname, past the dot */
+  .worker-projects { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 15px; }
+  .worker-chip {
+    padding: 1px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: transparent; cursor: pointer; font-family: var(--font-mono);
+    font-size: var(--text-2xs); color: var(--text-muted);
+    transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .worker-chip:hover { border-color: var(--border-strong); color: var(--text-strong); }
+  .worker-chip.active { border-color: var(--accent); color: var(--accent-text); }
+  .worker-none {
+    padding-left: 15px; font-family: var(--font-mono); font-style: italic;
+    font-size: var(--text-2xs); color: var(--text-faint);
+  }
+  .worker-empty { padding: 4px 10px 8px; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); }
+  .worker-note {
+    margin-bottom: 4px; padding: 6px 8px; border-radius: var(--radius-sm);
+    background: var(--warning-soft); color: var(--warning);
+    font-family: var(--font-mono); font-size: var(--text-2xs); line-height: 1.45;
+  }
+
+  .rail-foot { flex: 0 0 auto; border-top: 1px solid var(--border); padding: 14px; }
+  .snapshot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .snapshot { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); }
+  .theme-btn {
+    font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; cursor: pointer;
+    padding: 4px 9px; border-radius: var(--radius-pill); background: var(--surface);
+    border: 1px solid var(--border); color: var(--text-muted);
+    transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .theme-btn:hover { border-color: var(--border-strong); color: var(--text-strong); }
+
+  /* ---- board ---- */
+  .main { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; }
+  .board-head {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap;
+    padding: 16px 22px; border-bottom: 1px solid var(--border); background: var(--paper);
+  }
+  .board-title { display: flex; flex-direction: column; gap: 2px; margin-right: auto; min-width: 0; }
+  .board-title h2 {
+    margin: 0; font-family: var(--font-display); font-weight: 700; font-size: var(--text-xl);
+    letter-spacing: -0.02em; color: var(--text-strong); line-height: 1.1;
+  }
+  .board-title .note { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); }
+  /* wrap inside the group too, so the buttons stay reachable when zoom/reflow
+     shrinks the header below one row's width */
+  .seg {
+    display: flex; flex-wrap: wrap; padding: 3px; gap: 2px; background: var(--surface-subtle);
+    border: 1px solid var(--border); border-radius: var(--radius-pill);
+  }
+  .seg > button, .seg > a {
+    padding: 5px 13px; border-radius: var(--radius-pill); border: none; cursor: pointer;
+    font-family: var(--font-sans); font-size: var(--text-xs); font-weight: 600;
+    background: transparent; color: var(--text-muted); white-space: nowrap;
+    transition: background .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .seg > .selected { background: var(--surface); color: var(--text-strong); box-shadow: var(--shadow-xs); }
+  .seg > a:hover { color: var(--text-strong); }
+  .fit-btn {
+    font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 11px;
+    border-radius: var(--radius-pill); background: transparent; border: 1px solid var(--border);
+    color: var(--text-faint); transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .fit-btn.on { background: var(--surface); color: var(--text-muted); border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
+  .fit-btn:hover { color: var(--text-strong); }
+  .ctl-btn {
+    font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px;
+    background: var(--surface); color: var(--text-body);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-md); cursor: pointer;
+    transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .ctl-btn:hover { border-color: var(--accent); color: var(--text-strong); }
+
+  .strip { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; padding: 18px 22px 22px; }
+  .strip-inner { display: flex; gap: 14px; height: 100%; align-items: stretch; min-width: min-content; }
+  /* 270px minimum keeps the six-column budget (264 rail + 44 padding + 6 cols + 5 gaps)
+     at 1998px, satisfying the UI contract's no-horizontal-scroll criterion at ≥2000px
+      -  its 288px figure and that criterion contradict each other. */
+  .col {
+    flex: 1 1 0; min-width: 270px; max-width: 420px; display: flex; flex-direction: column;
+    min-height: 0; background: var(--surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+  }
+  .col-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .col-head .label {
+    font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: 0.12em;
+    text-transform: uppercase; font-weight: 600; color: var(--text-strong);
+  }
+  .col-head .count {
+    font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 1px 8px;
+  }
+  .kb-col { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 9px; }
+  .col-empty { padding: 18px 8px; text-align: center; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); }
+
+  /* ---- card (the whole card opens the drawer; the file icon opens the .md) ---- */
+  .card {
+    position: relative; cursor: pointer;
+    display: flex; flex-direction: column; gap: 7px; padding: 10px 11px 9px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--success);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-xs); color: var(--text-body);
+    transition: transform .18s var(--ease-out), box-shadow .18s var(--ease-out), border-color .18s var(--ease-out);
+  }
+  /* the title button is the card's accessible control, so the focus ring belongs on
+     the whole card even though only the button is focusable */
+  .card:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .card-open {
+    display: block; width: 100%; padding: 0; margin: 0; border: none; background: none;
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+  }
+  .card-open:focus { outline: none; }
+  .card-file {
+    position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-sm); color: var(--text-faint);
+    transition: color .12s var(--ease-out), background .12s var(--ease-out);
+  }
+  .card-file:hover { color: var(--accent-text); background: var(--surface-subtle); }
+  .card-file svg { width: 14px; height: 14px; display: block; }
+  /* the accent border-left-color is set inline per card, so it survives this hover override */
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--border-strong); color: var(--text-body); }
+  /* keep the chip row clear of the absolutely-positioned file icon */
+  .card .chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-right: 24px; }
+  .chip {
+    display: inline-flex; align-items: center; padding: 2px 7px; border-radius: var(--radius-sm);
+    font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.4; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip.outline { background: transparent; border-color: var(--border); color: var(--text-faint); }
+  .blocked-mark { font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; color: var(--danger); }
+  /* overflow-wrap keeps long unbreakable tokens (slugs, paths, SHAs) from raising a
+     column's intrinsic width above its 270px floor  -  without it the strip's min-content
+     exceeds the 2000px no-scroll budget */
+  /* the clamp sits on the button, not the wrapper  -  a block-level child would
+     otherwise defeat the -webkit-box line clamp */
+  .card .title { font-weight: 600; font-size: var(--text-sm); line-height: 1.35; color: var(--text-strong); }
+  .card .title .card-open {
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    text-wrap: pretty; overflow-wrap: anywhere;
+  }
+  .card .next {
+    font-size: var(--text-xs); line-height: 1.5; color: var(--text-body);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+  .card .fit {
+    font-size: var(--text-2xs); line-height: 1.45; color: var(--text-faint); font-style: italic;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+  .card .meta {
+    display: flex; align-items: center; gap: 8px; padding-top: 2px; border-top: 1px solid var(--border-faint);
+    font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint);
+  }
+  .card .meta .owner { margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+
+  /* ---- outbox: sidebar row, panel, card badge ----
+     Tier 1 of the attention model. It is pinned above Projects and never collapses,
+     because it is the one thing on this page that is not a slice of the board. */
+  .outbox-row {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 9px 12px; margin-bottom: 6px; border: 0; cursor: pointer; text-align: left;
+    background: var(--surface-2); border-radius: var(--radius-sm);
+    font: inherit; color: var(--text); border-left: 3px solid var(--border-strong);
+  }
+  .outbox-row:hover { background: var(--surface-3); }
+  .outbox-row .label { flex: 1; font-weight: 600; }
+  .outbox-row .summary { font-family: var(--font-mono), monospace; font-size: var(--text-2xs); color: var(--text-faint); }
+  /* Hue is KIND, not urgency: danger when any ask is open, accent when only notices
+     are, quiet at zero. Both pulse  -  a notice is not less worth seeing, it is a
+     different thing to see (spec D1/D5). */
+  .outbox-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border-strong); flex: none; }
+  .outbox-dot.ask { background: var(--danger); animation: outbox-pulse 2.4s ease-in-out infinite; }
+  .outbox-dot.notice { background: var(--accent); animation: outbox-pulse 2.4s ease-in-out infinite; }
+  @keyframes outbox-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .outbox-dot { animation: none !important; } }
+
+  /* Below the drawer's 40, so opening an item stacks over the panel and closing
+     returns to it with the entry still selected. */
+  .outbox-overlay { position: fixed; inset: 0; z-index: 30; display: flex; justify-content: center; }
+  .outbox-overlay[hidden] { display: none; }
+  .outbox-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--text-strong) 34%, transparent); }
+  .outbox-panel {
+    position: relative; display: flex; flex-direction: column;
+    width: min(980px, 100%); height: 100%; background: var(--paper);
+    box-shadow: var(--shadow-lg); border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  }
+  .outbox-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border); flex: none;
+  }
+  .outbox-head h2 { font-size: var(--text-md); margin: 0; flex: 1; }
+  .outbox-body { flex: 1; overflow-y: auto; padding: 6px 0; }
+  .outbox-entry {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    border-left: 3px solid transparent; cursor: pointer;
+  }
+  .outbox-entry:hover { background: var(--surface-2); }
+  .outbox-entry.ask { border-left-color: var(--danger); }
+  .outbox-entry.notice { border-left-color: var(--accent); }
+  /* Answered entries recede but stay openable  -  they are awaiting routing, not gone. */
+  .outbox-entry.answered { opacity: 0.62; border-left-color: var(--border-strong); }
+  .outbox-entry .entry-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .outbox-entry .entry-id { font-family: var(--font-mono), monospace; font-size: var(--text-2xs); color: var(--text-faint); }
+  .outbox-entry .entry-title { font-weight: 600; flex: 1; min-width: 240px; }
+  .outbox-entry .entry-note { font-family: var(--font-mono), monospace; font-size: var(--text-2xs); margin-top: 4px; }
+  .outbox-entry.ask .entry-note { color: var(--danger); }
+  .outbox-entry.notice .entry-note { color: var(--accent); }
+  .outbox-entry .entry-body { margin-top: 8px; font-size: var(--text-sm); line-height: 1.55; }
+  .outbox-entry .entry-body :where(p, ul, ol) { margin: 0 0 8px; }
+  .outbox-entry .entry-body :where(ul, ol) { padding-left: 20px; }
+  .outbox-entry .entry-answer {
+    margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-sm);
+    background: var(--surface-2); font-size: var(--text-sm);
+    border-left: 2px solid var(--border-strong); white-space: pre-wrap;
+  }
+  .outbox-divider {
+    padding: 10px 18px 4px; font-family: var(--font-mono), monospace;
+    font-size: var(--text-2xs); color: var(--text-faint); text-transform: lowercase;
+  }
+  .outbox-anomaly {
+    margin: 8px 18px; padding: 8px 10px; border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    border-left: 3px solid var(--danger); font-size: var(--text-sm);
+  }
+  /* a known, dated retirement with a migration in flight  -  not a parse failure */
+  .outbox-anomaly.notice {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-left-color: var(--accent);
+  }
+  .outbox-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 40px; text-align: center;
+  }
+  .outbox-empty .caption { font-family: var(--font-mono), monospace; font-size: var(--text-2xs); color: var(--text-faint); }
+  .entry-answer-form { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .entry-answer-form textarea {
+    width: 100%; min-height: 3.2em; resize: vertical; padding: 8px 10px;
+    font: inherit; font-size: var(--text-sm); color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  }
+  .entry-answer-form .row { display: flex; align-items: center; gap: 8px; }
+  .entry-answer-form .hint { font-family: var(--font-mono), monospace; font-size: var(--text-2xs); color: var(--text-faint); flex: 1; }
+  .entry-conflict {
+    padding: 8px 10px; border-radius: var(--radius-sm); font-size: var(--text-sm);
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    border-left: 3px solid var(--danger);
+  }
+
+  /* The card badge. Its hue is the entry's kind, and it opens the panel at that entry
+     rather than the item drawer. */
+  .outbox-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 999px; cursor: pointer;
+    font-family: var(--font-mono), monospace; font-size: var(--text-2xs);
+    border: 1px solid currentColor; background: transparent;
+  }
+  .outbox-badge.ask { color: var(--danger); }
+  .outbox-badge.notice { color: var(--accent); }
+
+  /* ---- item detail drawer ---- */
+  .drawer-overlay { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: flex-end; }
+  /* an authored `display` wins over the UA rule behind [hidden], so the attribute
+     alone would leave the drawer on screen with .hidden reading true */
+  .drawer-overlay[hidden] { display: none; }
+  .drawer-scrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--text-strong) 34%, transparent); }
+  .drawer {
+    position: relative; height: 100%; max-width: 92vw;
+    background: var(--paper); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg);
+    display: flex; flex-direction: column;
+  }
+  .drawer.resizing { user-select: none; }
+  .drawer-resize {
+    position: absolute; left: -3px; top: 0; width: 7px; height: 100%; z-index: 1;
+    cursor: col-resize; background: transparent; border: none; padding: 0;
+    transition: background .12s var(--ease-out);
+  }
+  .drawer-resize:hover, .drawer-resize:focus-visible { background: var(--border-strong); }
+  .drawer-resize.dragging { background: var(--accent); }
+  .drawer-head {
+    flex: 0 0 auto; display: flex; gap: 12px; align-items: flex-start;
+    padding: 20px 22px 14px; border-bottom: 1px solid var(--border);
+  }
+  .drawer-head .head-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .drawer-head h2 {
+    margin: 0; font-family: var(--font-display); font-weight: 700; font-size: var(--text-xl);
+    letter-spacing: -0.02em; color: var(--text-strong); line-height: 1.2; text-wrap: pretty;
+  }
+  .drawer-sub { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--text-faint); overflow-wrap: anywhere; }
+  .drawer-tools { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+    border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-muted); font-family: var(--font-mono); font-size: var(--text-2xs); cursor: pointer;
+    white-space: nowrap; transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .pill:hover { border-color: var(--border-strong); color: var(--text-strong); }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+  .pill.on {
+    border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent-text);
+  }
+  .pill.on .dot { background: var(--accent); }
+  .drawer-close {
+    width: 30px; height: 30px; flex: 0 0 auto; display: inline-flex; align-items: center;
+    justify-content: center; border-radius: var(--radius-md); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted); cursor: pointer;
+    transition: border-color .12s var(--ease-out), color .12s var(--ease-out);
+  }
+  .drawer-close:hover { border-color: var(--border-strong); color: var(--text-strong); }
+  .drawer-body {
+    flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 26px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .facts {
+    margin: 0; background: var(--surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 15px;
+    display: grid; grid-template-columns: 104px 1fr; gap: 8px 12px; align-items: baseline;
+  }
+  .facts dt {
+    font-family: var(--font-mono); font-size: var(--text-2xs); text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-faint);
+  }
+  .facts dd { margin: 0; font-size: var(--text-sm); line-height: 1.6; color: var(--text-body); overflow-wrap: anywhere; }
+  /* deliberately raw and unparsed, so it reads as source being inspected rather
+     than data the UI endorses (the UI contract; keep raw) */
+  .frontmatter {
+    margin: 0; background: var(--surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 15px; font-family: var(--font-mono);
+    font-size: var(--text-2xs); line-height: 1.7; color: var(--text-muted);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .drawer-note {
+    border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 18px;
+    color: var(--text-muted); font-size: var(--text-sm); line-height: 1.6;
+  }
+  .drawer-loading { padding: 30px 0; text-align: center; color: var(--text-faint); font-size: var(--text-sm); }
+
+  .md-body { font-size: var(--text-sm); line-height: 1.65; color: var(--text-body); overflow-wrap: anywhere; }
+  .md-body > :first-child { margin-top: 0; }
+  .md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+    font-family: var(--font-display); font-weight: 700; color: var(--text-strong);
+    letter-spacing: -0.01em; line-height: 1.25; margin: 22px 0 8px;
+  }
+  .md-body h1 { font-size: var(--text-xl); }
+  .md-body h2 { font-size: var(--text-lg); }
+  .md-body h3 { font-size: var(--text-base); }
+  .md-body h4 { font-size: var(--text-sm); }
+  .md-body p { margin: 0 0 12px; }
+  .md-body ul, .md-body ol { margin: 0 0 12px; padding-left: 22px; }
+  .md-body li { margin: 4px 0; }
+  .md-body a { color: var(--accent-text); }
+  .md-body code {
+    font-family: var(--font-mono); font-size: 0.86em; background: var(--surface-subtle);
+    border: 1px solid var(--border-faint); border-radius: var(--radius-sm); padding: 1px 5px;
+  }
+  .md-body pre {
+    background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 12px 14px; overflow-x: auto; font-size: var(--text-2xs); line-height: 1.6;
+  }
+  .md-body pre code { background: none; border: none; padding: 0; }
+  .md-body blockquote {
+    margin: 0 0 12px; padding: 2px 14px; border-left: 2px solid var(--border-strong); color: var(--text-muted);
+  }
+  .md-body table { border-collapse: collapse; font-size: var(--text-xs); margin: 0 0 12px; display: block; overflow-x: auto; }
+  .md-body th, .md-body td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+  .md-body hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">
+        <div class="kicker">// DCL data repo</div>
+        <h1>Decently Tidy Ledger</h1>
+      </div>
+      <!-- Pinned above Projects and never collapsible. The outbox is tier 1 of the
+           attention model and is NOT a slice of the board, so no tier-2 control  -
+           neither the project rail nor the actor filter  -  may hide it. -->
+      <button class="outbox-row" type="button" id="outbox-row" aria-haspopup="dialog">
+        <span class="outbox-dot" id="outbox-dot" aria-hidden="true"></span>
+        <span class="label">Outbox</span>
+        <span class="summary" id="outbox-summary">…</span>
+      </button>
+
+      <section class="rail-sec rail-sec--projects" data-open="true" id="sec-projects">
+        <button class="sec-head" type="button" aria-expanded="true" aria-controls="projects-body" data-section="projects">
+          <span class="caret" aria-hidden="true">▸</span>
+          <span class="label">Projects</span>
+          <span class="summary" id="total-open">…</span>
+        </button>
+        <div class="sec-body" id="projects-body">
+          <nav class="rail-list kb-scroll" id="project-nav" aria-label="Filter by project"></nav>
+          <div class="legend">
+            <div class="legend-row">
+              <span class="what"><span class="swatch" style="background:var(--accent)"></span>needs you</span>
+              <span class="n" id="legend-needs">0</span>
+            </div>
+            <div class="legend-row">
+              <span class="what"><span class="swatch" style="background:var(--success)"></span>ready for an agent</span>
+              <span class="n" id="legend-ready">0</span>
+            </div>
+            <div class="legend-row">
+              <span class="what"><span class="swatch" style="background:var(--danger)"></span>blocked</span>
+              <span class="n" id="legend-blocked">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rail-sec rail-sec--workers" data-open="true" id="sec-workers" hidden>
+        <button class="sec-head" type="button" aria-expanded="true" aria-controls="workers-body" data-section="workers">
+          <span class="caret" aria-hidden="true">▸</span>
+          <span class="label">Workers</span>
+          <span class="summary" id="workers-summary">…</span>
+        </button>
+        <div class="sec-body" id="workers-body">
+          <div class="worker-list kb-scroll" id="worker-list"></div>
+        </div>
+      </section>
+
+      <div class="rail-foot">
+        <div class="snapshot-row">
+          <span class="snapshot" id="snapshot">snapshot  - </span>
+          <button class="theme-btn" id="theme-toggle" type="button" aria-label="Toggle theme"></button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="board-head">
+        <div class="board-title">
+          <h2 id="scope-title">All projects</h2>
+          <span class="note" id="scope-note">loading…</span>
+        </div>
+        <div class="seg" id="actor-tabs" role="group" aria-label="Filter by next actor">
+          <button type="button" data-actor="all" aria-pressed="true" class="selected">All</button>
+          <button type="button" data-actor="owner" aria-pressed="false">Needs you</button>
+          <button type="button" data-actor="agent" aria-pressed="false">Agent-ready</button>
+        </div>
+        <button class="fit-btn on" id="fit-toggle" type="button" aria-pressed="true" title="Show fit notes on cards">fit notes</button>
+        <button class="ctl-btn" id="refresh" type="button">↻ Refresh</button>
+      </header>
+      <div class="strip kb-scroll">
+        <div class="strip-inner" id="columns"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Item detail drawer -->
+  <div class="outbox-overlay" id="outbox-overlay" hidden>
+    <div class="outbox-scrim" id="outbox-scrim"></div>
+    <div class="outbox-panel" role="dialog" aria-modal="true" aria-labelledby="outbox-title">
+      <div class="outbox-head">
+        <h2 id="outbox-title">Outbox</h2>
+        <span class="summary" id="outbox-panel-summary"></span>
+        <a class="ctl-btn" href="/OUTBOX.md" target="_blank" rel="noopener">OUTBOX.md ↗</a>
+        <button class="ctl-btn" type="button" id="outbox-close" aria-label="Close outbox">✕</button>
+      </div>
+      <div class="outbox-body" id="outbox-body"></div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" id="drawer-overlay" hidden>
+    <div class="drawer-scrim" id="drawer-scrim"></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <div class="drawer-resize" id="drawer-resize" role="separator" aria-orientation="vertical"
+           aria-label="Resize drawer" tabindex="0"></div>
+      <header class="drawer-head">
+        <div class="head-main">
+          <div class="chips" id="drawer-chips"></div>
+          <h2 id="drawer-title">…</h2>
+          <div class="drawer-sub" id="drawer-sub"></div>
+        </div>
+        <div class="drawer-tools">
+          <a class="pill" id="drawer-open-md" href="#" target="_blank" rel="noopener">Open .md ↗</a>
+          <button class="pill" id="drawer-frontmatter" type="button" aria-pressed="false">
+            <span class="dot" aria-hidden="true"></span>frontmatter
+          </button>
+          <button class="drawer-close" id="drawer-close" type="button" title="Close (Esc)" aria-label="Close (Esc)">✕</button>
+        </div>
+      </header>
+      <div class="drawer-body" id="drawer-body"></div>
+    </aside>
+  </div>
+
+<script>
+// ---- UI state (all derived per render; theme persists in localStorage) ----
+let data = { generated: "", columns: [] };
+let fleet = { readAt: "", sweptAt: "", workers: [] };
+// "could not look" and "looked, saw nobody" are different answers and the rail must
+// never conflate them
+let fleetStatus = "loading"; // loading | ok | failed
+let fleetError = "";
+let filterProject = null; // null = all projects; otherwise a verbatim project value
+let filterActor = "all"; // all | owner | agent
+let showFit = true;
+// collapse state is deliberately NOT persisted  -  the UI contract asks for persistence
+// only on the drawer width, and inventing more is a decision nobody made
+let openSections = { projects: true, workers: true };
+// the frontmatter toggle is per-session on purpose: sticky while paging through
+// cards, reset on reload (the UI contract)
+let showFrontmatter = false;
+let drawerSlug = null;
+let drawerDetail = null;
+// ---- outbox state (UI only; nothing here is persisted server-side) ----
+let outbox = { readAt: "", entries: [], anomalies: [] };
+let outboxWritable = false;
+const outboxWriteToken = document.querySelector('meta[name="ledger-write-token"]').content;
+let outboxStatus = "loading"; // loading | ok | failed
+let outboxOpen = false;
+let outboxSel = null; // entry id the panel is scrolled to / highlighted
+// Drafts survive switching between entries but are never persisted anywhere: an
+// unsent draft is not an answer, and a reload should not make it look like one.
+let outboxDrafts = {};
+let outboxConflicts = {}; // entry id -> message from a 409
+// entry id -> true while its answer is being corrected; seeded from the current answer
+let outboxEditing = {};
+// Set when the panel must ignore the project rail: the spec names this escape hatch,
+// and a card badge sets it too so clicking one always shows the entry it points at
+// even when that entry belongs to another project.
+let outboxIgnoreProject = false;
+
+// ---- helpers ----
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function daysAgo(updated) {
+  const base = data.generated ? new Date(data.generated + "T00:00:00") : new Date();
+  const d = new Date(updated + "T00:00:00");
+  const n = Math.round((base - d) / 86400000);
+  return Number.isFinite(n) ? n : null;
+}
+function relLabel(updated) {
+  const n = daysAgo(updated);
+  if (n === null) return updated;
+  if (n <= 0) return "today";
+  if (n === 1) return "1d ago";
+  if (n < 14) return n + "d ago";
+  return updated;
+}
+
+// tone → token pair (the UI contract)
+function toneColors(tone) {
+  return ({
+    brand: ["--accent-soft", "--accent-text"],
+    neutral: ["--surface-subtle", "--text-muted"],
+    success: ["--success-soft", "--success"],
+    warning: ["--warning-soft", "--warning"],
+    danger: ["--danger-soft", "--danger"],
+  }[tone]) || ["--surface-subtle", "--text-muted"];
+}
+// current vocabulary plus the legacy values still present in older items
+function awaitTone(a) {
+  return ({
+    unblock: "danger", "review-merge": "success", deliver: "brand", accept: "warning",
+    approve: "brand", decide: "neutral", deploy: "brand", verify: "warning", manual: "warning",
+  }[a]) || "neutral";
+}
+function chip(text, tone) {
+  const [bg, fg] = toneColors(tone);
+  return '<span class="chip" style="background:var(' + bg + ');color:var(' + fg + ')">' + esc(text) + "</span>";
+}
+
+function allCards() {
+  return data.columns.flatMap((c) => c.cards);
+}
+function needsOwner(card) {
+  return card.nextActor === "owner";
+}
+function inProject(card) {
+  return filterProject === null || card.project === filterProject;
+}
+function inActor(card) {
+  if (filterActor === "owner") return needsOwner(card);
+  if (filterActor === "agent") return card.nextActor === "agent";
+  return true;
+}
+
+// Lucide-style file glyph, inline so the page stays dependency-free
+const FILE_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>' +
+  '<path d="M14 2v5h5"/></svg>';
+
+  const DTL_MARK =
+    '<svg viewBox="-6 -6 232 244" width="92" height="97" role="img" aria-label="The outbox is clear" ' +
+    'style="color:var(--text-faint);overflow:visible">' +
+    '<g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M42 188H38c-10 0-16-6-16-16V52c0-10 6-16 16-16h24c10 0 16 6 16 16v120c0 10-6 16-16 16h-4"/>' +
+    '<path d="M102 188h-4c-10 0-16-6-16-16V52c0-10 6-16 16-16h24c10 0 16 6 16 16v120c0 10-6 16-16 16h-4"/>' +
+    '<path d="M162 188h-4c-10 0-16-6-16-16V52c0-10 6-16 16-16h24c10 0 16 6 16 16v120c0 10-6 16-16 16h-4"/></g>' +
+    '<circle cx="38" cy="36" r="11.5" fill="currentColor"/>' +
+    '<circle cx="138" cy="91" r="11.5" fill="currentColor"/>' +
+    '<circle cx="182" cy="188" r="11.5" fill="currentColor"/>' +
+    '<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" opacity="0.55">' +
+    '<rect x="33" y="66" width="34" height="15" rx="4"/><rect x="33" y="92" width="34" height="15" rx="4"/>' +
+    '<rect x="33" y="118" width="34" height="15" rx="4"/><rect x="93" y="66" width="34" height="15" rx="4"/>' +
+    '<rect x="93" y="92" width="34" height="15" rx="4"/><rect x="93" y="118" width="34" height="15" rx="4"/>' +
+    '<rect x="153" y="66" width="34" height="15" rx="4"/><rect x="153" y="92" width="34" height="15" rx="4"/></g>' +
+    '<rect x="156" y="153" width="36" height="17" rx="4" fill="var(--accent)" transform="rotate(11 174 161.5)"/>' +
+    '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3.4" stroke-dasharray="0.1 3.2" opacity="0.7">' +
+    '<path d="M50 196 91 211"/><path d="M110 196v9"/><path d="M170 197 130 211"/></g>' +
+    '<circle cx="110" cy="216" r="16" fill="var(--accent)"/>' +
+    '<path d="M103.5 216.5 108 221 116.5 211" fill="none" stroke="var(--paper)" stroke-width="3.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// ---- outbox ----
+// Open is derived from the answer alone. Not the type, not the linked item's state:
+// a `decision` the agent expected you to wave through is still open until you say so.
+function entryOpen(entry) {
+  return !(entry.answer && entry.answer.trim());
+}
+
+function openEntries() {
+  return outbox.entries.filter(entryOpen);
+}
+
+/** Entries the current project filter would show. The COUNT deliberately ignores it  -
+ *  a tier-1 signal must not be hidden by a tier-2 control  -  but the panel says so. */
+function entriesForProject() {
+  if (filterProject === null || outboxIgnoreProject) return outbox.entries;
+  return outbox.entries.filter((e) => e.project === filterProject);
+}
+
+function renderOutboxRow() {
+  const dot = document.getElementById("outbox-dot");
+  const summary = document.getElementById("outbox-summary");
+  if (outboxStatus === "loading") {
+    dot.className = "outbox-dot";
+    summary.textContent = "…";
+    return;
+  }
+  if (outboxStatus === "failed") {
+    dot.className = "outbox-dot";
+    summary.textContent = "not checked";
+    return;
+  }
+  const open = openEntries();
+  const anyAsk = open.some((e) => e.kind === "ask");
+  dot.className = "outbox-dot" + (open.length === 0 ? "" : anyAsk ? " ask" : " notice");
+  const scoped = entriesForProject().filter(entryOpen).length;
+  summary.textContent = open.length === 0
+    ? "clear"
+    : filterProject !== null && scoped !== open.length
+      ? scoped + " of " + open.length + " open"
+      : open.length + " open";
+}
+
+/** Asks, then notices, then answered; newest id first inside each group. A notice is
+ *  most useful right after it is taken, which is why recency wins within a group. */
+function sortedEntries() {
+  const rank = (e) => (!entryOpen(e) ? 2 : e.kind === "ask" ? 0 : 1);
+  return outbox.entries.slice().sort((a, b) => {
+    const ra = rank(a), rb = rank(b);
+    return ra !== rb ? ra - rb : b.id - a.id;
+  });
+}
+
+function entryHtml(entry) {
+  const open = entryOpen(entry);
+  const cls = "outbox-entry " + (open ? entry.kind : "answered") +
+    (outboxSel === entry.id ? " selected" : "");
+  let html = '<div class="' + cls + '" data-entry="' + entry.id + '" id="outbox-entry-' + entry.id + '">';
+  html += '<div class="entry-head">';
+  html += '<span class="entry-id">#' + entry.id + "</span>";
+  html += '<span class="chip outline">' + esc(entry.type) + "</span>";
+  html += '<span class="chip outline">' + esc(entry.project) + "</span>";
+  html += '<span class="entry-title">' + esc(entry.title) + "</span>";
+  html += "</div>";
+  if (open) {
+    html += '<div class="entry-note">' +
+      (entry.kind === "notice" ? "acted  -  object to reverse" : "stopped  -  waiting on you") +
+      "</div>";
+  }
+  // already escaped and sanitized server-side; the client never renders raw entry text
+  html += '<div class="entry-body">' + entry.bodyHtml + "</div>";
+  if (!open) {
+    html += '<div class="entry-answer">' + esc(entry.answer) + "</div>";
+    if (outboxDrafts[entry.id] !== undefined && !outboxEditing[entry.id]) {
+      // a 409 whose payload shows this entry as answered must not swallow the draft:
+      // that draft is the one thing the operator typed and cannot be recovered
+      html += '<div class="entry-conflict">Someone else answered this while you were typing. ' +
+        "Your unsent draft is below  -  send it to replace their answer, or discard it.</div>";
+    }
+    // The spec's remedy for a wrong answer is to edit it  -  clearing back to empty is
+    // deliberately not offered, because empty means "never answered". Without this the
+    // remedy did not exist in the UI at all.
+    if (outboxWritable && !outboxEditing[entry.id]) {
+      html += '<button type="button" class="ctl-btn entry-edit" data-edit="' + entry.id +
+        '">Edit answer</button>';
+    }
+  }
+  if (outboxWritable && (open || outboxEditing[entry.id]) && entry.answerable === false) {
+    // the writer needs a `> A:` line to rewrite; offering a box that cannot be
+    // submitted is worse than saying so
+    html += '<div class="entry-conflict">This entry has no <code>&gt; A:</code> line, so it ' +
+      "cannot be answered from here. Add one in OUTBOX.md.</div>";
+  } else if (outboxWritable && (open || outboxEditing[entry.id] || outboxDrafts[entry.id] !== undefined)) {
+    const draft = outboxDrafts[entry.id] !== undefined
+      ? outboxDrafts[entry.id]
+      : (outboxEditing[entry.id] ? (entry.answer || "") : "");
+    if (outboxConflicts[entry.id]) {
+      html += '<div class="entry-conflict">' + esc(outboxConflicts[entry.id]) +
+        " Your draft is still below  -  re-send it if it is still the answer you want.</div>";
+    }
+    html += '<form class="entry-answer-form" data-answer="' + entry.id + '">';
+    // two rows is the right size: real answers here are things like "(a)" and "approved"
+    html += '<textarea rows="2" aria-label="Answer entry ' + entry.id +
+      '" placeholder="answer…">' + esc(draft) + "</textarea>";
+    html += '<div class="row"><span class="hint">⌘↵ / Ctrl↵ to send · Esc to cancel</span>';
+    // Always present, not conditional on a draft existing: typing deliberately does not
+    // re-render (it would move the caret), so a button that appears with the first
+    // keystroke would never appear at all. A stable control is also easier to aim at.
+    html += '<button type="button" class="ctl-btn entry-cancel" data-cancel="' + entry.id +
+      '">Cancel</button>';
+    // a blank draft has nothing to send, and the endpoint would reject it anyway
+    html += '<button type="submit" class="ctl-btn"' + (draft.trim() ? "" : " disabled") +
+      ">Send</button></div>";
+    html += "</form>";
+  }
+  // Only when the slug is actually on the board. The resolution tiers are best-effort
+  // over prose and can name an item that was never created or has been deleted; a button
+  // that opens nothing is worse than no button. The OUTBOX.md ↗ link in
+  // the panel header is always there as the fallback route.
+  if (entry.itemSlug && allCards().some((c) => c.slug === entry.itemSlug)) {
+    html += '<button type="button" class="ctl-btn entry-item" data-slug="' + esc(entry.itemSlug) +
+      '">Open item →</button>';
+  }
+  html += "</div>";
+  return html;
+}
+
+function renderOutboxPanel() {
+  const body = document.getElementById("outbox-body");
+  const summary = document.getElementById("outbox-panel-summary");
+  if (!body) return;
+  if (outboxStatus === "failed") {
+    // "could not look" and "nothing to see" are different answers, and this panel is
+    // the one place that must never conflate them
+    body.innerHTML = '<div class="outbox-anomaly">Could not read OUTBOX.md  -  this is NOT ' +
+      "an empty outbox. Refresh, or open the file directly.</div>";
+    summary.textContent = "not checked";
+    return;
+  }
+  if (outboxStatus === "loading") {
+    // "not read yet" is not "nothing to see"  -  the empty state must only ever follow
+    // a successful read of an actually empty file
+    body.innerHTML = '<div class="outbox-divider">reading OUTBOX.md…</div>';
+    summary.textContent = "…";
+    return;
+  }
+  const open = openEntries();
+  summary.textContent = open.length + " open · " + outbox.entries.length + " total";
+
+  if (outbox.entries.length === 0 && outbox.anomalies.length > 0) {
+    // nothing parsed AND something was wrong: that is a broken file, not a clear
+    // outbox, and rendering the empty state here would be the worst lie this panel
+    // could tell
+    body.innerHTML = outbox.anomalies.map((a) =>
+      '<div class="outbox-anomaly"><strong>' + esc(a.kind) + "</strong>  -  " + esc(a.detail) +
+      "</div>").join("") +
+      '<div class="outbox-divider">nothing under `## Open` could be parsed  -  this is NOT a clear outbox</div>';
+    return;
+  }
+  if (outbox.entries.length === 0) {
+    body.innerHTML = '<div class="outbox-empty">' + DTL_MARK +
+      '<div class="caption">the outbox is clear</div></div>';
+    return;
+  }
+
+  let html = "";
+  for (const anomaly of outbox.anomalies) {
+    // a retired type is a known migration in flight, not a broken file; it says so
+    // without borrowing the alarm colour that means "this did not parse"
+    const notice = anomaly.kind === "retired-type";
+    html += '<div class="outbox-anomaly' + (notice ? " notice" : "") + '" data-kind="' +
+      esc(anomaly.kind) + '"><strong>' + esc(anomaly.kind) + "</strong>  -  " +
+      esc(anomaly.detail) + "</div>";
+  }
+  let dividerDone = false;
+  // The rail scopes what the panel LISTS; the sidebar count deliberately still reports
+  // the global total, because a tier-1 signal must not be hidden by a tier-2 control
+  //. Selecting a project narrows the reading, never the alarm.
+  const shown = entriesForProject();
+  const scoped = new Set(shown.map((e) => e.id));
+  if (filterProject !== null) {
+    const hidden = outbox.entries.length - shown.length;
+    html += '<div class="outbox-divider">' +
+      (outboxIgnoreProject
+        ? 'showing every project · <button type="button" class="ctl-btn" id="outbox-scope">scope to ' + esc(filterProject) + "</button>"
+        : "scoped to " + esc(filterProject) + " · " + hidden +
+          ' hidden · <button type="button" class="ctl-btn" id="outbox-scope">show all</button>') +
+      "</div>";
+  }
+  for (const entry of sortedEntries().filter((e) => scoped.has(e.id))) {
+    if (!entryOpen(entry) && !dividerDone) {
+      html += '<div class="outbox-divider">answered · awaiting routing</div>';
+      dividerDone = true;
+    }
+    html += entryHtml(entry);
+  }
+  body.innerHTML = html;
+}
+
+/** Send one answer. A 409 means an agent rewrote OUTBOX.md since the payload was
+ *  served; the draft stays on screen either way  -  it is the one thing the operator
+ *  typed and the one thing we cannot recover. */
+// Sends are serialized against each other, not just against refreshes. Two answers
+// submitted before the first response resolves would otherwise let the earlier, smaller
+// payload land last and roll the newer answer off the screen.
+let sendChain = Promise.resolve();
+function sendAnswer(id, text) {
+  sendChain = sendChain.then(() => sendAnswerNow(id, text)).catch(() => {});
+  return sendChain;
+}
+
+async function sendAnswerNow(id, text) {
+  const entry = outbox.entries.find((e) => e.id === id);
+  if (!entry || !text.trim()) return;
+  outboxDrafts[id] = text;
+  try {
+    const res = await fetch("/api/outbox/" + id + "/answer", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-ledger-write-token": outboxWriteToken,
+      },
+      body: JSON.stringify({ text, entryHash: entry.entryHash }),
+    });
+    const payload = await res.json();
+    // a refresh started before this write must not land on top of its result
+    outboxSeq += 1;
+    if (res.ok) {
+      outbox = payload;
+      if ("writable" in payload) outboxWritable = payload.writable === true;
+      outboxStatus = "ok";
+      delete outboxDrafts[id];
+      delete outboxConflicts[id];
+      delete outboxEditing[id];
+    } else {
+      outboxConflicts[id] = payload.error || ("HTTP " + res.status);
+      // a 409 ships the fresh file, so adopt it  -  the operator should see what changed
+      if (payload.payload) outbox = payload.payload;
+    }
+  } catch (err) {
+    // The request may have reached the server and been applied before the connection
+    // broke. Claiming nothing was written would be a guess, and the expensive kind:
+    // it invites re-sending an answer that already landed.
+    outboxConflicts[id] =
+      "Could not reach the board server, so whether this answer was written is UNKNOWN. " +
+      "Refresh before re-sending.";
+  }
+  renderOutboxRow();
+  renderOutboxPanel();
+  render();
+}
+
+// Focus returns to whatever actually opened the panel  -  the sidebar row, or the card
+// badge the operator clicked. Always sending it to the row loses their place on the
+// board.
+let outboxOpener = null;
+function openOutbox(entryId) {
+  outboxOpener = document.activeElement;
+  outboxOpen = true;
+  outboxSel = entryId === undefined ? null : entryId;
+  const overlay = document.getElementById("outbox-overlay");
+  overlay.hidden = false;
+  renderOutboxPanel();
+  if (outboxSel !== null) {
+    const el = document.getElementById("outbox-entry-" + outboxSel);
+    if (el) el.scrollIntoView({ block: "center" });
+  }
+  // the composer if there is one to type into, else the close button
+  if (!focusComposer(outboxSel === null ? undefined : outboxSel)) {
+    document.getElementById("outbox-close").focus();
+  }
+}
+
+function closeOutbox() {
+  outboxOpen = false;
+  document.getElementById("outbox-overlay").hidden = true;
+  // the opener may have been re-rendered away (a badge whose entry got answered), so
+  // fall back to the row, which is always present
+  const target = outboxOpener && document.body.contains(outboxOpener)
+    ? outboxOpener
+    : document.getElementById("outbox-row");
+  target.focus();
+  outboxOpener = null;
+}
+
+// Refresh can be pressed faster than a response arrives; without this an older
+// payload can land after a newer one and quietly roll the panel back.
+let outboxSeq = 0;
+async function fetchOutbox() {
+  const seq = ++outboxSeq;
+  try {
+    const res = await fetch("/api/outbox", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const payload = await res.json();
+    if (seq !== outboxSeq) return;
+    outbox = payload;
+    if ("writable" in payload) outboxWritable = payload.writable === true;
+    outboxStatus = "ok";
+  } catch (err) {
+    if (seq !== outboxSeq) return;
+    outboxStatus = "failed";
+  }
+  renderOutboxRow();
+  if (outboxOpen) renderOutboxPanel();
+  render();
+}
+
+// ---- render ----
+function cardHtml(card) {
+  const ownerMove = needsOwner(card);
+  const auto = card.autonomy === "auto";
+  const accent = card.blocked ? "--danger" : ownerMove ? "--accent" : "--success";
+  const lead = ownerMove ? (card.awaiting || "owner") : auto ? "auto" : "agent";
+  const leadTone = ownerMove ? awaitTone(card.awaiting) : auto ? "neutral" : "success";
+
+  let chips = chip(lead, leadTone);
+  if (card.blocked) {
+    chips += '<span class="blocked-mark" title="' + esc(card.blockedReason || "blocked") + '">⛔ blocked</span>';
+  }
+  if (filterProject === null) {
+    chips += '<span class="chip outline">' + esc(card.project) + "</span>";
+  }
+  // Any OPEN entry marks the card, in that entry's kind hue. Answered entries put no
+  // mark on anything  -  they are awaiting routing, which is an agent's job, not yours.
+  const entries = openEntries().filter((e) => e.itemSlug === card.slug);
+  if (entries.length) {
+    const kind = entries.some((e) => e.kind === "ask") ? "ask" : "notice";
+    chips += '<button type="button" class="outbox-badge ' + kind + '" data-entry="' + entries[0].id +
+      '" title="' + esc(entries.length + " open outbox entry/entries") + '">outbox ' + entries.length + "</button>";
+  }
+
+  // The card is a plain container, NOT role="button": an ARIA button's children are
+  // presentational, which would strip the file link of its link semantics. The accessible
+  // control is the title button; a mouse click anywhere on the
+  // card still opens the drawer via the delegated handler, and the two controls are
+  // siblings. The file link carries the local repo route the server already serves
+  //  -  UI contract prefers that over the prototype's hard-coded GitHub URL.
+  let html = '<div class="card" data-slug="' + esc(card.slug) +
+    '" style="border-left-color:var(' + accent + ')">';
+  html += '<a class="card-file" href="/' + esc(card.path) + '" target="_blank" rel="noopener" ' +
+    'title="Open ' + esc(card.path) + '" aria-label="Open ' + esc(card.path) + '">' + FILE_ICON + "</a>";
+  html += '<div class="chips">' + chips + "</div>";
+  html += '<div class="title"><button type="button" class="card-open">' + esc(card.title) + "</button></div>";
+  html += '<div class="next">' + esc(card.nextStep) + "</div>";
+  if (showFit && card.fit) html += '<div class="fit">' + esc(card.fit) + "</div>";
+  html += '<div class="meta"><span title="' + esc(card.updated) + '">' + esc(relLabel(card.updated)) + "</span>";
+  if (card.assignee && card.assignee !== "-") html += '<span class="owner">' + esc(card.assignee) + "</span>";
+  html += "</div></div>";
+  return html;
+}
+
+function columnHtml(column) {
+  const cards = column.cards.filter((c) => inProject(c) && inActor(c));
+  const body = cards.length
+    ? cards.map(cardHtml).join("")
+    : '<div class="col-empty">empty</div>';
+  return (
+    '<section class="col">' +
+    '<div class="col-head"><span class="label">' + esc(column.label) + '</span>' +
+    '<span class="count">' + cards.length + "</span></div>" +
+    '<div class="kb-col">' + body + "</div></section>"
+  );
+}
+
+function renderProjectNav() {
+  const cards = allCards();
+  const nav = document.getElementById("project-nav");
+  // the aggregate row carries no data-project at all, so a project literally
+  // named "all" stays a distinct, selectable row
+  const priority = data.priorityProjects || [];
+  const rank = (project) => {
+    const index = priority.indexOf(project);
+    return index === -1 ? priority.length : index;
+  };
+  const projects = [...new Set(cards.map((c) => c.project))].sort((a, b) =>
+    rank(a) - rank(b) || a.localeCompare(b));
+  const row = (value, label, extraClass) => {
+    const selected = filterProject === value;
+    const count = value === null ? cards.length : cards.filter((c) => c.project === value).length;
+    // aria-pressed mirrors the visual selected state so the single-select rail is
+    // announceable, matching the actor group's semantics
+    return '<button type="button" class="rail-row' + extraClass + (selected ? " selected" : "") +
+      '" aria-pressed="' + selected + '"' +
+      (value === null ? "" : ' data-project="' + esc(value) + '"') + ">" +
+      '<span class="name"><span class="dot"></span><span class="text">' + esc(label) + "</span></span>" +
+      '<span class="count">' + count + "</span></button>";
+  };
+  const focusWasInRail = nav.contains(document.activeElement);
+  nav.innerHTML =
+    row(null, "All projects", " all") + projects.map((p) => row(p, p, "")).join("");
+  for (const btn of nav.querySelectorAll(".rail-row")) {
+    btn.addEventListener("click", () => {
+      filterProject = "project" in btn.dataset ? btn.dataset.project : null;
+      render();
+    });
+  }
+  // re-rendering replaces the rail's DOM; put keyboard focus back on the row
+  // that is now selected so rail navigation keeps its place
+  if (focusWasInRail) {
+    const target = nav.querySelector(".rail-row.selected") || nav.querySelector(".rail-row");
+    if (target) target.focus();
+  }
+}
+
+function render() {
+  renderProjectNav();
+
+  // legend counts: within the selected project, before the actor tab
+  const scoped = allCards().filter(inProject);
+  document.getElementById("legend-needs").textContent = scoped.filter(needsOwner).length;
+  document.getElementById("legend-ready").textContent = scoped.filter((c) => c.nextActor === "agent").length;
+  document.getElementById("legend-blocked").textContent = scoped.filter((c) => c.blocked).length;
+  document.getElementById("total-open").textContent = allCards().length + " open";
+  document.getElementById("snapshot").textContent = "snapshot " + (data.generated || " - ");
+
+  const shown = scoped.filter(inActor);
+  document.getElementById("scope-title").textContent = filterProject === null ? "All projects" : filterProject;
+  document.getElementById("scope-note").textContent =
+    shown.length + " open items · " +
+    (filterActor === "all" ? "everything" : filterActor === "owner" ? "needs you" : "ready for an agent") +
+    " · dropped hidden";
+
+  // the actor buttons are static DOM updated in place, so selection keeps keyboard
+  // focus and the pressed state stays announceable
+  for (const tab of document.querySelectorAll("#actor-tabs > button")) {
+    const selected = filterActor === tab.dataset.actor;
+    tab.classList.toggle("selected", selected);
+    tab.setAttribute("aria-pressed", String(selected));
+  }
+
+  document.getElementById("columns").innerHTML = data.columns.map(columnHtml).join("");
+  renderWorkers();
+}
+
+// ---- workers: fleet presence (mirrors workers.ts) ----
+// The rail answers one question: which host could take a session now. Readiness is a pure
+// function of the snapshot's own fields, so it needs no timer  -  but the labels below do,
+// and so does staleness, which is why both are re-derived on a tick rather than at fetch.
+//
+// Staleness is a property of the SNAPSHOT, not of a host. A provider is not required to
+// keep a heartbeat and a sweep may fire at session boundaries, so a per-host freshness
+// budget would be fiction; six hours is roughly "no session since this morning".
+const FLEET_STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+// Hosts disagree about the time by seconds, which is ordinary; a large lead is a wrong clock
+// on the writing host, and treating it as "just now" would make a months-old fleet look
+// freshly swept and hold the six-hour rule open until real time caught up.
+const FLEET_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
+function workerAgeMs(iso, now) {
+  const at = Date.parse(iso);
+  if (Number.isNaN(at)) return null;
+  return now - at; // signed: negative means the timestamp is ahead of this machine
+}
+function workerReadiness(worker) {
+  const flags = worker.flags || [];
+  if (!worker.reachable) return "unreachable";
+  if (flags.indexOf("cleared") === -1) return "held";
+  if (flags.indexOf("capable") === -1) return "held";
+  if (flags.indexOf("no-dispatch") !== -1) return "held";
+  return "ready";
+}
+function workerReadinessReason(worker) {
+  const flags = worker.flags || [];
+  if (!worker.reachable) return "not reachable at the last sweep";
+  const held = [];
+  if (flags.indexOf("cleared") === -1) held.push("not cleared for worker duty");
+  if (flags.indexOf("capable") === -1) held.push("toolchain not installed");
+  if (flags.indexOf("no-dispatch") !== -1) held.push("deliberately not a dispatch target");
+  if (!held.length) return "reachable, cleared and capable  -  could take a session";
+  return "reachable; " + held.join("; ");
+}
+function fleetIsStale(sweptAt, now) {
+  const age = workerAgeMs(sweptAt, now);
+  if (age === null) return true; // not knowing how old it is means it is not current
+  if (age < -FLEET_CLOCK_SKEW_MS) return true; // dated further ahead than skew explains
+  return age > FLEET_STALE_AFTER_MS;
+}
+function workerRelLabel(iso, now) {
+  if (!iso) return "never seen";
+  const signed = workerAgeMs(iso, now);
+  if (signed === null) return iso;
+  // clamped for display only; fleetIsStale judges a materially future reading separately
+  const age = Math.max(0, signed);
+  const minutes = Math.floor(age / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return minutes + "m ago";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return hours + "h ago";
+  return Math.floor(hours / 24) + "d ago";
+}
+
+function workerRowHtml(worker, now) {
+  const readiness = workerReadiness(worker);
+  // the full reason, not merely "held"  -  otherwise the only way to learn why a machine is
+  // amber is to go and read the roster
+  const reason = worker.name + " · " + workerReadinessReason(worker) +
+    " · last seen " + workerRelLabel(worker.lastSeenAt, now);
+  // The reason goes on the DOT's label, not only in the row's title. A title is reachable
+  // by hovering a pointer and by nothing else: the row is a plain div, so it cannot be
+  // focused or read out, which left the reason available to exactly one kind of operator
+  // while the announced text was the bare word "held". The dot already
+  // carries role="img", so its label is the one thing here that is announced.
+  let html = '<div class="worker-row ' + readiness + '" title="' + esc(reason) + '">';
+  html += '<div class="worker-line">' +
+    '<span class="worker-dot ' + readiness + '" role="img" aria-label="' + esc(reason) + '"></span>' +
+    '<span class="worker-name">' + esc(worker.name) + "</span>" +
+    '<span class="worker-when">' + esc(workerRelLabel(worker.lastSeenAt, now)) + "</span></div>";
+  if (worker.projects && worker.projects.length) {
+    html += '<div class="worker-projects">' + worker.projects.map((p) => {
+      const active = filterProject === p;
+      return '<button type="button" class="worker-chip' + (active ? " active" : "") +
+        '" data-project="' + esc(p) + '" aria-pressed="' + active + '">' + esc(p) + "</button>";
+    }).join("") + "</div>";
+  } else {
+    html += '<div class="worker-none">nothing checked out</div>';
+  }
+  return html + "</div>";
+}
+
+function renderWorkers() {
+  const now = Date.now();
+  const list = document.getElementById("worker-list");
+  const summary = document.getElementById("workers-summary");
+  const workers = fleet.workers || [];
+  // `N ready`, never `N/M online`: the previous phrasing implied a liveness this data has
+  // never had, and the count is the number an operator would act on
+  const ready = workers.filter((w) => workerReadiness(w) === "ready").length;
+  const stale = fleetStatus === "ok" && fleetIsStale(fleet.sweptAt, now);
+  if (fleetStatus === "failed") summary.textContent = "not checked";
+  else if (fleetStatus === "loading") summary.textContent = "…";
+  else if (!workers.length) summary.textContent = " - ";
+  else {
+    summary.textContent = ready + " ready · swept " + workerRelLabel(fleet.sweptAt, now) +
+      (stale ? "  -  stale" : "");
+  }
+  summary.classList.toggle("live", fleetStatus === "ok" && !stale && ready > 0);
+  list.classList.toggle("stale", stale);
+
+  const focusedProject = document.activeElement && document.activeElement.closest
+    ? (document.activeElement.closest(".worker-chip") || {}).dataset : null;
+  const rows = workers.map((w) => workerRowHtml(w, now)).join("");
+  if (fleetStatus === "failed") {
+    // never render a failed read as "no workers reported"
+    const banner = '<div class="worker-note">could not read the fleet  -  ' + esc(fleetError) +
+      (workers.length ? ". Showing the last values read" +
+        (fleet.readAt ? " " + esc(workerRelLabel(fleet.readAt, now)) : "") + "." : ".") + "</div>";
+    list.innerHTML = banner + rows;
+  } else if (workers.length) {
+    list.innerHTML = rows;
+  } else {
+    list.innerHTML = '<div class="worker-empty">' +
+      (fleetStatus === "loading" ? "reading the fleet…" : "no workers reported") + "</div>";
+  }
+  for (const chip of list.querySelectorAll(".worker-chip")) {
+    chip.addEventListener("click", () => {
+      // clicking a worker's project chip filters the board to that project
+      filterProject = chip.dataset.project;
+      render();
+    });
+  }
+  // re-rendering replaces the list's DOM; put focus back on the same chip so
+  // keyboard navigation keeps its place, as the project rail already does
+  if (focusedProject && focusedProject.project) {
+    const target = list.querySelector('.worker-chip[data-project="' + CSS.escape(focusedProject.project) + '"]');
+    if (target) target.focus();
+  }
+}
+
+// ---- collapsible sidebar sections ----
+function applySection(name) {
+  const section = document.getElementById("sec-" + name);
+  const head = section.querySelector(".sec-head");
+  section.dataset.open = String(openSections[name]);
+  head.setAttribute("aria-expanded", String(openSections[name]));
+}
+for (const head of document.querySelectorAll(".sec-head")) {
+  head.addEventListener("click", () => {
+    const name = head.dataset.section;
+    openSections[name] = !openSections[name];
+    applySection(name);
+  });
+}
+
+// ---- item detail drawer ----
+const DRAWER_WIDTH_KEY = "kb.drawerWidth";
+const DRAWER_MIN_PX = 380;
+function drawerMaxPx() { return window.innerWidth * 0.88; }
+
+function storedDrawerWidth() {
+  const saved = Number(localStorage.getItem(DRAWER_WIDTH_KEY));
+  // values at or below the drag floor are ignored rather than clamped up  -  a stored
+  // width that small is a leftover, not a preference
+  return Number.isFinite(saved) && saved > DRAWER_MIN_PX ? saved : Math.round(window.innerWidth / 3);
+}
+/** On a viewport narrower than the drawer's floor the two bounds would cross, so the
+ * floor yields to the ceiling rather than announcing min > max. */
+function drawerBounds() {
+  const max = drawerMaxPx();
+  return { min: Math.min(DRAWER_MIN_PX, max), max };
+}
+function applyDrawerWidth(px) {
+  const { min, max } = drawerBounds();
+  const clamped = Math.min(Math.max(px, min), max);
+  const drawer = document.getElementById("drawer");
+  drawer.style.width = clamped + "px";
+  // a focusable separator is a range widget, so it owes its value and bounds to
+  // assistive tech  -  not just a CSS width. Report the width
+  // actually rendered, since the CSS max-width can cap it below `clamped`.
+  const rendered = Math.round(drawer.getBoundingClientRect().width) || Math.round(clamped);
+  const strip = document.getElementById("drawer-resize");
+  strip.setAttribute("aria-valuemin", String(Math.round(min)));
+  strip.setAttribute("aria-valuemax", String(Math.round(max)));
+  strip.setAttribute("aria-valuenow", String(rendered));
+  strip.setAttribute("aria-valuetext", rendered + " pixels wide");
+  return clamped;
+}
+
+// the bounds are viewport-derived, so a resize invalidates both the clamp and the
+// announced range while the drawer is open
+window.addEventListener("resize", () => {
+  if (document.getElementById("drawer-overlay").hidden) return;
+  applyDrawerWidth(document.getElementById("drawer").getBoundingClientRect().width);
+});
+
+function stateTone(s) {
+  return ({
+    idea: "neutral", "spec-filed": "brand", "in-progress": "warning", blocked: "danger",
+    implemented: "success", merged: "success", tested: "success", delivered: "success",
+    accepted: "success", dropped: "neutral",
+  }[s]) || "neutral";
+}
+function cardBySlug(slug) {
+  return allCards().find((c) => c.slug === slug) || null;
+}
+/** Fallback for the error state only. The normal path uses the local repo route
+ * (UI contract); this exists for when that route is what just failed.
+ * Built from the card's own path, because cards come from `for-delivery/` as well
+ * as `items/` and an items-only URL 404s for those. */
+function sourceUrl(card, slug) {
+  const path = card && card.path ? card.path : "items/" + slug + ".md";
+  return "/" + path.split("/").map(encodeURIComponent).join("/");
+}
+function factRow(label, valueHtml) {
+  return valueHtml ? "<dt>" + esc(label) + "</dt><dd>" + valueHtml + "</dd>" : "";
+}
+
+/** The facts panel comes from the parsed item record, not the file body. `blockedBy`
+ * is the ledger card's, because the unsatisfied-depends-on rule needs every item  -
+ * including archived targets, which satisfy a dependency but are not in the columns. */
+function factsHtml(detail, card) {
+  const needsOwnerHere = detail.nextActor === "owner";
+  const actor = needsOwnerHere
+    ? "you" + (detail.awaiting ? " · " + esc(detail.awaiting) : "")
+    : esc(detail.nextActor || " - ");
+  const owner = detail.assignee && detail.assignee !== "-" ? esc(detail.assignee) : "unclaimed";
+  const blockedBy = card && card.blockedBy && card.blockedBy.length ? card.blockedBy : [];
+  return '<dl class="facts">' +
+    factRow("Next step", esc(detail.nextStep || " - ")) +
+    factRow("Next actor", actor) +
+    factRow("Autonomy", esc(detail.autonomy || " - ")) +
+    factRow("Owner", owner) +
+    (detail.fit ? factRow("Agent fit", esc(detail.fit)) : "") +
+    (detail.dependsOn && detail.dependsOn.length ? factRow("Depends on", esc(detail.dependsOn.join(", "))) : "") +
+    (blockedBy.length ? factRow("Blocked by", '<span style="color:var(--danger)">' + esc(blockedBy.join(", ")) + "</span>") : "") +
+    "</dl>";
+}
+
+function renderDrawerBody() {
+  const body = document.getElementById("drawer-body");
+  if (!drawerDetail) return;
+  const card = cardBySlug(drawerSlug);
+  let html = factsHtml(drawerDetail, card);
+  if (showFrontmatter && drawerDetail.frontmatter) {
+    html += '<pre class="frontmatter">' + esc(drawerDetail.frontmatter) + "</pre>";
+  }
+  html += '<div class="md-body">' + (drawerDetail.bodyHtml || "") + "</div>";
+  body.innerHTML = html;
+  body.scrollTop = 0;
+}
+
+function renderDrawerHead(detail, card) {
+  const chips = document.getElementById("drawer-chips");
+  const needsOwnerHere = detail.nextActor === "owner";
+  const auto = detail.autonomy === "auto";
+  const lead = needsOwnerHere ? (detail.awaiting || "owner") : auto ? "auto" : "agent";
+  const leadTone = needsOwnerHere ? awaitTone(detail.awaiting) : auto ? "neutral" : "success";
+  chips.innerHTML = chip(lead, leadTone) +
+    '<span class="chip outline">' + esc(detail.project) + "</span>" +
+    chip(detail.state, stateTone(detail.state));
+  document.getElementById("drawer-title").textContent = detail.title;
+  document.getElementById("drawer-sub").textContent =
+    detail.slug + ".md · updated " + detail.updated;
+  const openMd = document.getElementById("drawer-open-md");
+  openMd.href = "/" + detail.path;
+  openMd.title = "Open " + detail.path;
+}
+
+let drawerLastFocus = null;
+let drawerSeq = 0;
+async function openDrawer(slug) {
+  const seq = ++drawerSeq;
+  const overlay = document.getElementById("drawer-overlay");
+  const body = document.getElementById("drawer-body");
+  if (overlay.hidden) {
+    drawerLastFocus = document.activeElement;
+    applyDrawerWidth(storedDrawerWidth());
+    overlay.hidden = false;
+  }
+  drawerSlug = slug;
+  drawerDetail = null;
+  const card = cardBySlug(slug);
+  document.getElementById("drawer-chips").innerHTML = "";
+  document.getElementById("drawer-title").textContent = "Loading…";
+  document.getElementById("drawer-sub").textContent = slug + ".md";
+  // point Open .md somewhere real before the fetch resolves  -  otherwise a failed
+  // load leaves it on href="#" with no way out of the drawer
+  const openMd = document.getElementById("drawer-open-md");
+  openMd.href = sourceUrl(card, slug);
+  body.innerHTML = '<div class="drawer-loading">Loading…</div>';
+  document.getElementById("drawer-close").focus();
+  try {
+    const res = await fetch("/api/item?slug=" + encodeURIComponent(slug), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const detail = await res.json();
+    if (seq !== drawerSeq) return; // a newer card was opened while this was in flight
+    drawerDetail = detail;
+    renderDrawerHead(detail, cardBySlug(slug));
+    renderDrawerBody();
+  } catch (err) {
+    if (seq !== drawerSeq) return;
+    document.getElementById("drawer-title").textContent = slug;
+    // a failure here is a genuine read/parse failure on a file the board just listed,
+    // not a stale snapshot  -  say that rather than blaming a sync, and always offer a
+    // way out of the drawer to the canonical copy
+    const local = card ? '<a href="/' + esc(card.path) + '" target="_blank" rel="noopener">' +
+      esc(card.path) + "</a> · " : "";
+    body.innerHTML = '<div class="drawer-note">Could not read <strong>' + esc(slug) +
+      ".md</strong>  -  " + esc(String(err)) +
+      ". The board listed this item, so the file should exist; check that it is readable and its " +
+      "frontmatter parses.<div style=\"margin-top:10px\">" + local +
+      '<a href="' + esc(sourceUrl(card, slug)) + '" target="_blank" rel="noopener">open source file ↗</a>' +
+      "</div></div>";
+  }
+}
+
+function closeDrawer() {
+  const overlay = document.getElementById("drawer-overlay");
+  if (overlay.hidden) return;
+  overlay.hidden = true;
+  const closedSlug = drawerSlug;
+  drawerSlug = null;
+  drawerDetail = null;
+  drawerSeq++; // abandon any in-flight load so it cannot render into a closed drawer
+  const currentCard = [...document.querySelectorAll(".card")]
+    .find((card) => card.dataset.slug === closedSlug)?.querySelector(".card-open");
+  const target = drawerLastFocus && document.body.contains(drawerLastFocus)
+    ? drawerLastFocus
+    : currentCard || document.getElementById("refresh");
+  if (target && target.focus) target.focus();
+  drawerLastFocus = null;
+}
+
+// drag-to-resize, persisted per the UI contract's explicit decision
+(function wireDrawerResize() {
+  const strip = document.getElementById("drawer-resize");
+  const drawer = document.getElementById("drawer");
+  let dragging = false;
+  function widthFromPointer(clientX) {
+    return applyDrawerWidth(window.innerWidth - clientX);
+  }
+  function persist() {
+    localStorage.setItem(DRAWER_WIDTH_KEY, String(Math.round(drawer.getBoundingClientRect().width)));
+  }
+  strip.addEventListener("mousedown", (e) => {
+    dragging = true;
+    strip.classList.add("dragging");
+    drawer.classList.add("resizing");
+    e.preventDefault();
+  });
+  document.addEventListener("mousemove", (e) => { if (dragging) widthFromPointer(e.clientX); });
+  document.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    strip.classList.remove("dragging");
+    drawer.classList.remove("resizing");
+    persist();
+  });
+  // the strip is a real separator, so it resizes from the keyboard too  -  a
+  // mouse-only handle would put the width out of reach entirely
+  strip.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 96 : 24;
+    if (e.key === "ArrowLeft") applyDrawerWidth(drawer.getBoundingClientRect().width + step);
+    else if (e.key === "ArrowRight") applyDrawerWidth(drawer.getBoundingClientRect().width - step);
+    else return;
+    e.preventDefault();
+    persist();
+  });
+})();
+
+document.getElementById("drawer-scrim").addEventListener("click", closeDrawer);
+document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+document.getElementById("drawer-frontmatter").addEventListener("click", () => {
+  showFrontmatter = !showFrontmatter;
+  const btn = document.getElementById("drawer-frontmatter");
+  btn.classList.toggle("on", showFrontmatter);
+  btn.setAttribute("aria-pressed", String(showFrontmatter));
+  renderDrawerBody();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    // The drawer stacks over the panel, so Esc peels one layer at a time: the drawer
+    // first, and only then the outbox underneath it.
+    if (!document.getElementById("drawer-overlay").hidden) { closeDrawer(); return; }
+    if (outboxOpen) {
+      // Esc in a composer abandons that edit first; a second Esc closes the panel
+      const form = e.target.closest && e.target.closest(".entry-answer-form");
+      if (form) { cancelEdit(Number(form.dataset.answer)); return; }
+      closeOutbox();
+      return;
+    }
+    closeDrawer();
+    return;
+  }
+  if (e.key !== "Tab") return;
+  // Whichever dialog is on top owns the focus order. The outbox is aria-modal too, so
+  // Tab must not walk out of it into the board behind.
+  const overlay = !document.getElementById("drawer-overlay").hidden
+    ? document.getElementById("drawer-overlay")
+    : outboxOpen ? document.getElementById("outbox-overlay") : null;
+  if (!overlay || overlay.hidden) return;
+  // keep Tab inside the dialog, so aria-modal is true of the focus order too
+  const focusables = overlay.querySelectorAll(
+    'a[href], button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+  else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+});
+
+// A click anywhere on a card opens the drawer. The file icon is excluded here so it
+// navigates to the .md instead  -  that exclusion, not stopPropagation, is what keeps
+// the two actions apart. Keyboard activation needs no handler of its own: the title
+// is a real <button>, so Enter and Space already produce a click that lands here.
+document.getElementById("columns").addEventListener("click", (e) => {
+  if (e.target.closest(".card-file")) return;
+  const card = e.target.closest(".card");
+  if (!card) return;
+  if (window.getSelection && String(window.getSelection())) return; // don't hijack text selection
+  openDrawer(card.dataset.slug);
+});
+
+// ---- theme (persisted in localStorage so the choice survives a reload) ----
+function currentTheme() {
+  const saved = localStorage.getItem("board-theme");
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("theme-toggle").textContent = theme === "dark" ? "☀ light" : "☾ dark";
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  localStorage.setItem("board-theme", next);
+  applyTheme(next);
+}
+
+// ---- data ----
+// overlapping refreshes resolve in any order; only the latest request may apply
+// its payload  -  or its error note  -  so an older response can never overwrite a
+// newer board state
+let refreshSeq = 0;
+async function fetchAndRender() {
+  const seq = ++refreshSeq;
+  const note = document.getElementById("scope-note");
+  try {
+    // no-store makes the fresh-parse contract explicit end to end  -  the server
+    // re-parses on every request and the browser must not satisfy Refresh from cache
+    const res = await fetch("/api/board", { cache: "no-store" });
+    const payload = await res.json();
+    if (seq !== refreshSeq) return;
+    data = payload;
+    // a refresh can drop the selected project entirely (last open item archived);
+    // fall back to All rather than titling an empty board with it
+    if (filterProject !== null && !allCards().some((c) => c.project === filterProject)) {
+      filterProject = null;
+    }
+    render();
+  } catch (err) {
+    if (seq !== refreshSeq) return;
+    // This hint used to name no command: the obvious one, `bun run board`, regenerated
+    // BOARD.md with a stale renderer and dropped every assignee value, so suggesting it
+    // would have been a data-loss instruction. That generator is gone  -  the launcher now
+    // only starts this server  -  so the hint can name it
+    // The CLI remains read-only unless the operator explicitly enables exclusive writes.
+    note.textContent = location.protocol === "file:"
+      ? "Opened as a file:// page  -  this view needs to be served over HTTP. Run `bun run board` from the repo root."
+      : "Failed to load: " + err;
+  }
+}
+
+// the fleet is a separate endpoint on a separate sequence  -  a failing fleet poll
+// must not blank the board, and a slow one must not hold it up
+let fleetSeq = 0;
+async function fetchFleet() {
+  const seq = ++fleetSeq;
+  try {
+    const res = await fetch("/api/workers", { cache: "no-store" });
+    // an error response can still carry JSON; without this it would parse into a
+    // shape with no `workers` and read as an empty fleet
+    if (!res.ok) {
+      // ...and that JSON is worth reading before discarding it. The endpoint says WHY it
+      // could not answer  -  which file it could not read, or which field of it was wrong  -
+      // and "HTTP 503" alone left an operator unable to tell an absent snapshot from a
+      // malformed one, which are repaired differently.
+      let detail = "";
+      try {
+        const body = await res.json();
+        if (body && typeof body.error === "string") detail = body.error;
+      } catch (_) { /* a non-JSON error body is no worse than the status alone */ }
+      throw new Error(detail ? "HTTP " + res.status + "  -  " + detail : "HTTP " + res.status);
+    }
+    const payload = await res.json();
+    if (!payload || !Array.isArray(payload.workers)) throw new Error("malformed payload");
+    if (seq !== fleetSeq) return;
+    fleet = payload;
+    fleetStatus = "ok";
+    fleetError = "";
+    document.getElementById("sec-workers").hidden = false;
+  } catch (err) {
+    if (seq !== fleetSeq) return;
+    // keep the last known fleet rather than erasing it  -  it is still the most
+    // recent thing we actually saw, and the banner says it is not current
+    fleetStatus = "failed";
+    fleetError = String(err);
+  }
+  renderWorkers();
+}
+
+function refreshAll() {
+  fetchAndRender();
+  fetchFleet();
+  fetchOutbox();
+}
+
+applyTheme(currentTheme());
+applySection("projects");
+applySection("workers");
+document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+document.getElementById("refresh").addEventListener("click", refreshAll);
+document.getElementById("outbox-row").addEventListener("click", () => openOutbox());
+document.getElementById("outbox-close").addEventListener("click", closeOutbox);
+document.getElementById("outbox-scrim").addEventListener("click", closeOutbox);
+// A card badge opens the panel AT that entry rather than the item drawer, and must not
+// let the card's delegated click handler fire underneath it.
+// CAPTURE phase on purpose: the card's own delegated click handler is registered on an
+// ancestor, so a bubble-phase listener here runs after it and the drawer would open
+// behind the panel.
+document.addEventListener("click", (event) => {
+  const badge = event.target.closest(".outbox-badge");
+  if (!badge) return;
+  event.stopPropagation();
+  event.preventDefault();
+  const id = Number(badge.dataset.entry);
+  // the rail must never hide the entry a badge points at
+  const entry = outbox.entries.find((e) => e.id === id);
+  outboxIgnoreProject = !!(entry && filterProject !== null && entry.project !== filterProject);
+  openOutbox(id);
+}, true);
+// Open item → stacks the drawer (z 40) over the panel (z 30), so closing it returns
+// here with the entry still selected.
+document.getElementById("outbox-body").addEventListener("click", (event) => {
+  const button = event.target.closest(".entry-item");
+  if (!button) return;
+  event.stopPropagation();
+  openDrawer(button.dataset.slug);
+});
+document.getElementById("outbox-body").addEventListener("click", (event) => {
+  const edit = event.target.closest(".entry-edit");
+  if (edit) {
+    event.stopPropagation();
+    outboxEditing[Number(edit.dataset.edit)] = true;
+    renderOutboxPanel();
+    focusComposer(Number(edit.dataset.edit));
+    return;
+  }
+  const cancel = event.target.closest(".entry-cancel");
+  if (cancel) {
+    event.stopPropagation();
+    cancelEdit(Number(cancel.dataset.cancel));
+    return;
+  }
+  const scope = event.target.closest("#outbox-scope");
+  if (scope) {
+    event.stopPropagation();
+    outboxIgnoreProject = !outboxIgnoreProject;
+    renderOutboxPanel();
+  }
+});
+
+/** Abandon an edit or an unsent draft, returning the entry to how it reads on disk. */
+function cancelEdit(id) {
+  delete outboxEditing[id];
+  delete outboxDrafts[id];
+  delete outboxConflicts[id];
+  renderOutboxPanel();
+}
+
+/** Put the caret where the operator is going to type. Opening a panel whose whole
+ * purpose is answering and landing focus on its close button wastes a keystroke and
+ * reads as "nothing to do here". */
+function focusComposer(id) {
+  const form = id === undefined
+    ? document.querySelector(".entry-answer-form")
+    : document.querySelector('[data-answer="' + id + '"]');
+  const box = form && form.querySelector("textarea");
+  if (box) { box.focus(); return true; }
+  return false;
+}
+document.getElementById("outbox-body").addEventListener("submit", (event) => {
+  const form = event.target.closest(".entry-answer-form");
+  if (!form) return;
+  event.preventDefault();
+  sendAnswer(Number(form.dataset.answer), form.querySelector("textarea").value);
+});
+// keep the draft in state as it is typed, so switching entries does not lose it
+document.getElementById("outbox-body").addEventListener("input", (event) => {
+  const form = event.target.closest(".entry-answer-form");
+  if (!form) return;
+  const id = Number(form.dataset.answer);
+  outboxDrafts[id] = event.target.value;
+  // Send enables/disables with the draft, without re-rendering the box being typed in
+  const send = form.querySelector('button[type="submit"]');
+  if (send) send.disabled = !event.target.value.trim();
+});
+document.getElementById("outbox-body").addEventListener("keydown", (event) => {
+  const form = event.target.closest(".entry-answer-form");
+  if (!form || event.key !== "Enter" || !(event.metaKey || event.ctrlKey)) return;
+  event.preventDefault();
+  sendAnswer(Number(form.dataset.answer), form.querySelector("textarea").value);
+});
+for (const tab of document.querySelectorAll("#actor-tabs > button")) {
+  tab.addEventListener("click", () => { filterActor = tab.dataset.actor; render(); });
+}
+document.getElementById("fit-toggle").addEventListener("click", () => {
+  showFit = !showFit;
+  const btn = document.getElementById("fit-toggle");
+  btn.classList.toggle("on", showFit);
+  btn.setAttribute("aria-pressed", String(showFit));
+  render();
+});
+
+// staleness and the relative label are time-dependent, so the rows re-derive on a
+// timer even when nothing is refetched  -  that is the whole point of showing the age
+setInterval(renderWorkers, 30000);
+
+refreshAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "dataRepo": "/path/to/dcl-data-repo",
+  "port": 4173,
+  "outboxWrites": "disabled"
+}

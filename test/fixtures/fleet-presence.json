@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "sweptAt": "2026-08-10T11:30:00Z",
+  "sweptFrom": "dispatcher",
+  "hosts": [
+    {
+      "name": "worker-a",
+      "reachable": true,
+      "lastSeenAt": "2026-08-10T11:30:00Z",
+      "flags": ["cleared", "capable"],
+      "projects": ["alpha"],
+      "unreconciled": 0
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "owner": "Example Owner",
+  "priorityProjects": ["beta"],
+  "integrationBranch": "master",
+  "landedAdapter": "git",
+  "projects": {}
+}

@@ -1,0 +1,19 @@
+{
+  "name": "decently-tidy-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "board": "bun run src/cli-board.ts",
+    "test": "bun test",
+    "test:ui": "bun run test/ui/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "decently-coordinated-loops": "git+ssh://git@github.com/tbelmega/decently-coordinated-loops.git#v0.1.0",
+    "marked": "^18.0.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "^7.0.2"
+  }
+}
