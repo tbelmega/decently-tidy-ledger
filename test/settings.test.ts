@@ -52,7 +52,7 @@ describe("loadSettings", () => {
   test("keeps the committed template aligned with the expected structure", () => {
     const template = JSON.parse(readFileSync(join(import.meta.dir, "..", "settings.template.json"), "utf8"));
     expect(template).toEqual({
-      dataRepo: "/path/to/task-tracking",
+      dataRepo: "/path/to/dcl-data-repo",
       port: 4173,
       outboxWrites: "disabled",
     });

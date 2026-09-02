@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "decently-coordinated-loops": "git+ssh://git@github.com/tbelmega/decently-coordinated-loops.git#v0.1.0",
+    "decently-coordinated-loops": "git+https://github.com/tbelmega/decently-coordinated-loops.git#v0.2.0",
     "marked": "^18.0.6"
   },
   "devDependencies": {

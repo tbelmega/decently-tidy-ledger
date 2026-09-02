@@ -3,8 +3,21 @@
 Decently Tidy Ledger is a web UI for a Decently Coordinated Loops data repo.
 It renders the board, item details, and Outbox. Optionally, if used with a fleet of worker computers, it can display the fleet status.
 
+**Read-only UI:** The UI looks like a typical task tracking board, but it is not. You will not be able to update ticket status through drop-down menus, drag card do a different column or anything like that. Items are updated by agents according to the workflow defined in Decently Coordinated Loops (DCL), during autonomous agent work or direct user prompts.
+Decently Tidy Ledger is a mere graphical representation of the current state of your data repo.
+
 DCL owns the data contract. This project consumes DCL's versioned item, validation, preflight,
 and Outbox modules rather than maintaining copies of them.
+
+## Where is the documentation?
+
+There is none. You don't need any. 
+- Start your coding agent of choice in this project
+- Ask it
+  - "What is this project?"
+  - "Install and configure it for me"
+  - "How do I start the UI?"
+- Your agent will figure it out.
 
 ## Run
 
@@ -47,3 +60,11 @@ provider is registered. A local wrapper can create a `PresenceProviderRegistry`,
 provider, and pass the registry to `startServer`. `fleet-snapshot.ts` supplies a generic validated
 snapshot reader that such a local provider may compose, but it contains no machine-specific path
 or provider registration.
+
+## License
+
+Decently Tidy Ledger is licensed under the [MIT License](LICENSE). The fonts vendored in
+`public/fonts/` have separate copyright notices and license terms in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Exact upstream revisions, source paths,
+checksums, and recorded transformations for vendored assets are in
+[ASSET_PROVENANCE.md](ASSET_PROVENANCE.md).
