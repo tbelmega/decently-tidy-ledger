@@ -5,7 +5,7 @@
     "": {
       "name": "decently-tidy-ledger",
       "dependencies": {
-        "decently-coordinated-loops": "git+ssh://git@github.com/tbelmega/decently-coordinated-loops.git#v0.1.0",
+        "decently-coordinated-loops": "git+https://github.com/tbelmega/decently-coordinated-loops.git#v0.2.0",
         "marked": "^18.0.6",
       },
       "devDependencies": {
@@ -61,7 +61,7 @@
 
     "bun-types": ["bun-types@1.4.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q=="],
 
-    "decently-coordinated-loops": ["decently-coordinated-loops@git+ssh://git@github.com/tbelmega/decently-coordinated-loops.git#c01ea20932088e5b033ef1dad16397c3c7e20d08", { "dependencies": { "yaml": "^2.9.0" } }, "c01ea20932088e5b033ef1dad16397c3c7e20d08"],
+    "decently-coordinated-loops": ["decently-coordinated-loops@github:tbelmega/decently-coordinated-loops#9335a38", { "dependencies": { "yaml": "^2.9.0" } }, "tbelmega-decently-coordinated-loops-9335a38", "sha512-kUIhlzIMwtD6e2I1SrJBwnRWPzo00YF9RuzcdbhF+KedMD/7sczdSciQ17P75tL3nqzEJ4eJ7at3g0V8wInbEg=="],
 
     "marked": ["marked@18.0.11", "", { "bin": { "marked": "bin/marked.js" } }, "sha512-HnslJfsZkRPBDJRHvVtAaWlZHEpSu7u8LgQuJCELjRKuWR+hpq4A7sLq3p8HaI9ypVoXDXxV34CsQJEe1+J5Aw=="],
 
